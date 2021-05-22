@@ -28,6 +28,7 @@ func Init() {
 	client, err := elastic.NewClient(
 		elastic.SetURL("localhost:9200"),
 		elastic.SetHealthcheckInterval(10*time.Second),
+		elastic.SetSniff(false),
 	)
 	if err != nil {
 		panic(err)

@@ -15,3 +15,8 @@
 vendor/
 go.mod
 go.sum
+
+# ElasticSearch data volumes
+data01
+data02
+data03

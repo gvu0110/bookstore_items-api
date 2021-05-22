@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/gvu0110/bookstore_items-api/clients/elasticsearch"
 )
 
 var (
@@ -12,6 +13,7 @@ var (
 )
 
 func StartApplication() {
+	elasticsearch.Init()
 	mapURLs()
 
 	srv := &http.Server{

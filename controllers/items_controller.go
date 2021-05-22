@@ -1,12 +1,15 @@
 package controllers
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gvu0110/bookstore_items-api/domain/items"
 	"github.com/gvu0110/bookstore_items-api/services"
 	"github.com/gvu0110/bookstore_items-api/utils/http_utils"
 	"github.com/gvu0110/bookstore_oauth-go/oauth"
+	"github.com/gvu0110/bookstore_utils-go/rest_errors"
 )
 
 var (
@@ -28,14 +31,26 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Unmarshall request into the item struct
-	item := items.Item{
-		Seller: oauth.GetCallerID(r),
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		restErr := rest_errors.NewBadRequestRESTError("Invalid request body")
+		http_utils.ResponseRESTError(w, *restErr)
+		return
+	}
+	defer r.Body.Close()
+
+	var itemRequest items.Item
+	if err := json.Unmarshal(requestBody, &itemRequest); err != nil {
+		restErr := rest_errors.NewBadRequestRESTError("Invalid item JSON body")
+		http_utils.ResponseRESTError(w, *restErr)
+		return
 	}
 
-	result, err := services.ItemsService.Create(item)
+	itemRequest.Seller = oauth.GetCallerID(r)
+
+	result, createErr := services.ItemsService.Create(itemRequest)
 	if err != nil {
-		http_utils.ResponseRESTError(w, *err)
+		http_utils.ResponseRESTError(w, *createErr)
 		return
 	}
 

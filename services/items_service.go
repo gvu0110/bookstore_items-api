@@ -23,6 +23,10 @@ func (s *itemService) Create(item items.Item) (*items.Item, *rest_errors.RESTErr
 	return &item, nil
 }
 
-func (s *itemService) Get(string) (*items.Item, *rest_errors.RESTError) {
-	return nil, nil
+func (s *itemService) Get(id string) (*items.Item, *rest_errors.RESTError) {
+	item := items.Item{ID: id}
+	if err := item.Get(); err != nil {
+		return nil, err
+	}
+	return &item, nil
 }

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/gvu0110/bookstore_items-api/domain/items"
 	"github.com/gvu0110/bookstore_items-api/services"
 	"github.com/gvu0110/bookstore_items-api/utils/http_utils"
@@ -65,6 +67,15 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	itemID := strings.TrimSpace(vars["id"])
+
+	item, err := services.ItemsService.Get(itemID)
+	if err != nil {
+		http_utils.ResponseRESTError(w, *err)
+		return
+	}
+	http_utils.ResponseJSON(w, http.StatusOK, item)
 }
 
 func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {

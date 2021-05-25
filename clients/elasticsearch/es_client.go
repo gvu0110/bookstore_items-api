@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gvu0110/bookstore_items-api/logger"
+	"github.com/gvu0110/bookstore_utils-go/logger"
 	"github.com/olivere/elastic"
 )
 
@@ -27,10 +27,13 @@ func (c *esClient) setClient(client *elastic.Client) {
 }
 
 func Init() {
+	log := logger.GetLogger()
 	client, err := elastic.NewClient(
 		elastic.SetURL("http://localhost:9200"),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		elastic.SetSniff(false),
+		elastic.SetErrorLog(log),
+		elastic.SetInfoLog(log),
 	)
 	if err != nil {
 		panic(err)

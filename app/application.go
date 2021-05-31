@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gvu0110/bookstore_items-api/clients/elasticsearch"
+	"github.com/gvu0110/bookstore_utils-go/logger"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 func StartApplication() {
 	elasticsearch.Init()
 	mapURLs()
-
+	logger.Info("Starting the application ...")
 	srv := &http.Server{
 		Handler: router,
 		Addr:    "localhost:8082",

@@ -11,21 +11,22 @@ var (
 )
 
 type itemServiceInterface interface {
-	Create(items.Item) (*items.Item, *rest_errors.RESTError)
-	Get(string) (*items.Item, *rest_errors.RESTError)
-	Search(queries.ESQuery) ([]items.Item, *rest_errors.RESTError)
+	Create(items.Item) (*items.Item, rest_errors.RESTError)
+	Get(string) (*items.Item, rest_errors.RESTError)
+	Search(queries.ESQuery) ([]items.Item, rest_errors.RESTError)
+	Delete(string) rest_errors.RESTError
 }
 
 type itemService struct{}
 
-func (s *itemService) Create(item items.Item) (*items.Item, *rest_errors.RESTError) {
+func (s *itemService) Create(item items.Item) (*items.Item, rest_errors.RESTError) {
 	if err := item.Save(); err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *itemService) Get(id string) (*items.Item, *rest_errors.RESTError) {
+func (s *itemService) Get(id string) (*items.Item, rest_errors.RESTError) {
 	item := items.Item{ID: id}
 	if err := item.Get(); err != nil {
 		return nil, err
@@ -33,7 +34,15 @@ func (s *itemService) Get(id string) (*items.Item, *rest_errors.RESTError) {
 	return &item, nil
 }
 
-func (s *itemService) Search(query queries.ESQuery) ([]items.Item, *rest_errors.RESTError) {
+func (s *itemService) Search(query queries.ESQuery) ([]items.Item, rest_errors.RESTError) {
 	dao := items.Item{}
 	return dao.Search(query)
+}
+
+func (s *itemService) Delete(id string) rest_errors.RESTError {
+	item := items.Item{ID: id}
+	if err := item.Delete(); err != nil {
+		return err
+	}
+	return nil
 }

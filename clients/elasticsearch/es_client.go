@@ -3,10 +3,15 @@ package elasticsearch
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/gvu0110/bookstore_utils-go/logger"
 	"github.com/olivere/elastic"
+)
+
+const (
+	es_env_var = "ES_ADDRESS"
 )
 
 var (
@@ -18,6 +23,7 @@ type esClientInterface interface {
 	Index(string, string, interface{}) (*elastic.IndexResponse, error)
 	Get(string, string, string) (*elastic.GetResult, error)
 	Search(string, elastic.Query) (*elastic.SearchResult, error)
+	Delete(string, string, string) error
 }
 
 type esClient struct {
@@ -31,7 +37,7 @@ func (c *esClient) setClient(client *elastic.Client) {
 func Init() {
 	log := logger.GetLogger()
 	client, err := elastic.NewClient(
-		elastic.SetURL("http://localhost:9200"),
+		elastic.SetURL(fmt.Sprintf("http://%s", os.Getenv(es_env_var))),
 		elastic.SetHealthcheckInterval(10*time.Second),
 		elastic.SetSniff(false),
 		elastic.SetErrorLog(log),
@@ -85,4 +91,20 @@ func (c *esClient) Search(index string, query elastic.Query) (*elastic.SearchRes
 		return nil, err
 	}
 	return result, nil
+}
+
+func (c *esClient) Delete(index string, docType string, id string) error {
+	ctx := context.Background()
+	_, err := c.client.Delete().
+		Index(index).
+		Type(docType).
+		Id(id).
+		Refresh("true").
+		Do(ctx)
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error when trying to delete id %s", id), err)
+		return err
+	}
+	return nil
 }

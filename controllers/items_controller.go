@@ -12,6 +12,7 @@ import (
 	"github.com/gvu0110/bookstore_items-api/services"
 	"github.com/gvu0110/bookstore_items-api/utils/http_utils"
 	"github.com/gvu0110/bookstore_oauth-go/oauth"
+	"github.com/gvu0110/bookstore_utils-go/logger"
 	"github.com/gvu0110/bookstore_utils-go/rest_errors"
 )
 
@@ -23,6 +24,7 @@ type itemsControllerInterface interface {
 	Create(http.ResponseWriter, *http.Request)
 	Get(http.ResponseWriter, *http.Request)
 	Search(http.ResponseWriter, *http.Request)
+	Delete(http.ResponseWriter, *http.Request)
 }
 
 type itemsController struct {
@@ -30,21 +32,22 @@ type itemsController struct {
 
 func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 	if err := oauth.AuthenticateRequest(r); err != nil {
-		http_utils.ResponseRESTError(w, *err)
+		logger.Error("Error when trying to authenticate the request", err)
+		http_utils.ResponseRESTError(w, err)
 		return
 	}
 
 	sellerID := oauth.GetCallerID(r)
 	if sellerID == 0 {
 		restErr := rest_errors.NewUnauthorizedRESTError("Unable to retrieve information from the given access token")
-		http_utils.ResponseRESTError(w, *restErr)
+		http_utils.ResponseRESTError(w, restErr)
 		return
 	}
 
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		restErr := rest_errors.NewBadRequestRESTError("Invalid request body")
-		http_utils.ResponseRESTError(w, *restErr)
+		http_utils.ResponseRESTError(w, restErr)
 		return
 	}
 	defer r.Body.Close()
@@ -52,7 +55,7 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 	var itemRequest items.Item
 	if err := json.Unmarshal(requestBody, &itemRequest); err != nil {
 		restErr := rest_errors.NewBadRequestRESTError("Invalid item JSON body")
-		http_utils.ResponseRESTError(w, *restErr)
+		http_utils.ResponseRESTError(w, restErr)
 		return
 	}
 
@@ -60,7 +63,7 @@ func (c *itemsController) Create(w http.ResponseWriter, r *http.Request) {
 
 	result, createErr := services.ItemsService.Create(itemRequest)
 	if err != nil {
-		http_utils.ResponseRESTError(w, *createErr)
+		http_utils.ResponseRESTError(w, createErr)
 		return
 	}
 
@@ -73,7 +76,7 @@ func (c *itemsController) Get(w http.ResponseWriter, r *http.Request) {
 
 	item, err := services.ItemsService.Get(itemID)
 	if err != nil {
-		http_utils.ResponseRESTError(w, *err)
+		http_utils.ResponseRESTError(w, err)
 		return
 	}
 	http_utils.ResponseJSON(w, http.StatusOK, item)
@@ -83,7 +86,7 @@ func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		restErr := rest_errors.NewBadRequestRESTError("Invalid JSON body")
-		http_utils.ResponseRESTError(w, *restErr)
+		http_utils.ResponseRESTError(w, restErr)
 		return
 	}
 	defer r.Body.Close()
@@ -91,14 +94,33 @@ func (c *itemsController) Search(w http.ResponseWriter, r *http.Request) {
 	var query queries.ESQuery
 	if err := json.Unmarshal(bytes, &query); err != nil {
 		restErr := rest_errors.NewBadRequestRESTError("Invalid JSON body")
-		http_utils.ResponseRESTError(w, *restErr)
+		http_utils.ResponseRESTError(w, restErr)
 		return
 	}
 
 	items, searchErr := services.ItemsService.Search(query)
 	if searchErr != nil {
-		http_utils.ResponseRESTError(w, *searchErr)
+		http_utils.ResponseRESTError(w, searchErr)
 		return
 	}
 	http_utils.ResponseJSON(w, http.StatusOK, items)
+}
+
+func (c *itemsController) Delete(w http.ResponseWriter, r *http.Request) {
+	if err := oauth.AuthenticateRequest(r); err != nil {
+		logger.Error("Error when trying to authenticate the request", err)
+		http_utils.ResponseRESTError(w, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	itemID := strings.TrimSpace(vars["id"])
+
+	err := services.ItemsService.Delete(itemID)
+	if err != nil {
+		http_utils.ResponseRESTError(w, err)
+		return
+	}
+	responseBody := `"status":"deleted"`
+	http_utils.ResponseJSON(w, http.StatusOK, responseBody)
 }
